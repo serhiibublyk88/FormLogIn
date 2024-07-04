@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./App.module.css";
 
 const initialFieldState = {
@@ -18,50 +17,61 @@ const App = () => {
 
   const submitButtonRef = useRef(null);
 
-  const handleInputChange = (event, fieldName) => {
-    const value = event.target.value;
+  useEffect(() => {
+    if (
+      fields.email.valid &&
+      fields.password.valid &&
+      fields.confirmPassword.valid &&
+      submitButtonRef.current
+    ) {
+      submitButtonRef.current.focus();
+    }
+  }, [fields.email.valid, fields.password.valid, fields.confirmPassword.valid]);
+
+  const handleInputChange = ({ target }) => {
+    const { name, value } = target;
+    validateField(name, value);
     setFields((prevFields) => ({
       ...prevFields,
-      [fieldName]: {
-        ...prevFields[fieldName],
+      [name]: {
+        ...prevFields[name],
         value,
       },
     }));
-
-    validateField(fieldName, value);
   };
 
-  const handleInputBlur = (fieldName) => {
+  const handleInputBlur = (name) => {
+    validateField(name, fields[name].value);
     setFields((prevFields) => ({
       ...prevFields,
-      [fieldName]: {
-        ...prevFields[fieldName],
+      [name]: {
+        ...prevFields[name],
         touched: true,
       },
     }));
   };
 
-  const validateField = (fieldName, value) => {
+  const validateField = (name, value) => {
     let isValid = true;
     let error = null;
 
-    if (fieldName === "email") {
-      isValid = value.includes("@");
+    if (name === "email") {
+      isValid = /\S+@\S+\.\S+/.test(value);
       error = isValid ? null : "Введите корректный email";
-    } else if (fieldName === "password") {
+    } else if (name === "password") {
       isValid = value.length >= 6;
       error = isValid ? null : "Пароль должен содержать минимум 6 символов";
-    } else if (fieldName === "confirmPassword") {
+    } else if (name === "confirmPassword") {
       isValid = value === fields.password.value;
       error = isValid ? null : "Пароли не совпадают";
     }
 
     setFields((prevFields) => ({
       ...prevFields,
-      [fieldName]: {
-        ...prevFields[fieldName],
+      [name]: {
+        ...prevFields[name],
         valid: isValid,
-        error: error,
+        error,
       },
     }));
   };
@@ -112,16 +122,15 @@ const App = () => {
               placeholder={
                 fieldName === "confirmPassword"
                   ? "Confirm Password"
-                  : fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+                  : `${fieldName.charAt(0).toUpperCase()}${fieldName.slice(1)}`
               }
-              onChange={(event) => handleInputChange(event, fieldName)}
+              onChange={handleInputChange}
               onBlur={() => handleInputBlur(fieldName)}
               className={`${styles.input} ${
                 fields[fieldName].error && fields[fieldName].touched
                   ? styles.invalid
                   : ""
               }`}
-              disabled={fields[fieldName].valid}
             />
           </div>
         ))}
@@ -142,7 +151,7 @@ const App = () => {
             !fields.confirmPassword.valid
           }
         >
-          Log In
+          Зарегистрироваться
         </button>
       </form>
     </div>
